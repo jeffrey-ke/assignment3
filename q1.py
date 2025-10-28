@@ -33,16 +33,17 @@ def q1b(scene="hydrant"):
 
     utils.draw_annos(q1, vis=True)
 
-    # img1 = utils.draw_epipolar(q1, Fs[0:1])
-    img2 = utils.draw_epipolar(q1, Fs[1:2])
+    img1 = utils.draw_epipolar(q1, Fs[0:1])
+    # img2 = utils.draw_epipolar(q1, Fs[1:2])
     # img3 = utils.draw_epipolar(q1, Fs[2:3])
 
-    # utils.save_display("q1", scene, img1)
-    utils.save_display("q1", scene, img2)
+    utils.save_display("q1", scene, img1)
+    # utils.save_display("q1", scene, img2)
     # utils.save_display("q1", scene, img3)
 
 if __name__ == "__main__":
     os.makedirs("output", exist_ok=True)
     # q1a("bench")
     # q1a("remote")
-    q1b("hydrant")
+    # q1b("hydrant")
+    q1b("ball")

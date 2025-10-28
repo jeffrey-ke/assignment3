@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, isclose
 import pdb
 from dataclasses import dataclass
 import os
@@ -127,7 +127,7 @@ def create_F(correspondences):
             )
             [::-1]
         )
-        zeros = [root for root in np.roots(coeffs) if not isinstance(root, complex)]
+        zeros = [root.real if isinstance(root, complex) else root for root in np.roots(coeffs) if not isinstance(root, complex) or isclose(root.imag, 0)]
         Fs = np.array(
             [l * F1 + (1 - l) * F2 for l in zeros]
         )
