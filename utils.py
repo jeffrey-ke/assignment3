@@ -15,12 +15,46 @@ class Q1:
     K1: np.ndarray
     K2: np.ndarray
     gt: np.lib.npyio.NpzFile
+
+
+def draw_annos(q1, noisy=False, vis=False):
+    img1, img2 = q1.img1, q1.img2
+    corresps = (
+            unhomogenize(q1.corresp_noisy.transpose(1, 0, 2) if noisy else q1.corresp.transpose(1, 0, 2))
+            .astype(int)
+    )
+    rng = np.random.default_rng(0)
+    for (p_1, p_2) in corresps:
+        color = tuple(rng.integers(0, 255, 3).tolist())
+        img1 = cv2.circle(img1, p_1, radius=5, color=color, thickness=5)
+        img2 = cv2.circle(img2, p_2, radius=5, color=color, thickness=5)
+
+    if vis:
+        cv2.imshow("img1", img1)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        cv2.imshow("img2", img2)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    return img1, img2
+
+"""
+base = None
+for node, dirs, files in os.walk(os.getcwd()):
+    if dataset in dirs:
+        base = node
+        break
+assert base is not None
+"""
 _root = "data"
 def load_q1(dataset="bench"):
-    q1a = f"q1a/{dataset}"
+    if dataset in ["bench", "remote"]:
+        base = f"q1a/{dataset}"
+    else:
+        base = f"q1b/{dataset}"
 
-    pts1, pts2 = np.load(os.path.join(_root, q1a, "corresp.npz")).values()
-    pts1_noisy, pts2_noisy = np.load(os.path.join(_root, q1a, "corresp_noisy.npz"))
+    pts1, pts2 = np.load(os.path.join(_root, base, "corresp.npz")).values()
+    pts1_noisy, pts2_noisy = np.load(os.path.join(_root, base, "corresp_noisy.npz"))
 
     corresp = homogenize(
         np.stack((pts1, pts2), axis=0)
@@ -29,17 +63,19 @@ def load_q1(dataset="bench"):
         np.stack((pts1_noisy, pts2_noisy), axis=0)
     )
 
-    image1 = cv2.imread(os.path.join(_root, q1a, "image1.jpg"))
-    image2 = cv2.imread(os.path.join(_root, q1a, "image2.jpg"))
+    image1 = cv2.imread(os.path.join(_root, base, "image1.jpg"))
+    image2 = cv2.imread(os.path.join(_root, base, "image2.jpg"))
     assert image1 is not None and image2 is not None
 
-    gt = np.load(os.path.join(_root, q1a, "gt.npz"))
+    gt = np.load(os.path.join(_root, base, "gt.npz"))
 
-    K1,K2 = np.load(os.path.join(_root, q1a, "intrinsics.npz")).values()
+    K1,K2 = np.load(os.path.join(_root, base, "intrinsics.npz")).values()
     return Q1(corresp, corresp_noisy, image1, image2, K1, K2, gt)
 
 
-def draw_epipolar(points, F, img2):
+def draw_epipolar(q1, F):
+    img2 = q1.img2.copy()
+    points = q1.corresp[0]
     assert F.shape[0] == 1
     F = F.squeeze()
     height,width = img2.shape[:-1]
@@ -95,7 +131,7 @@ def create_F(correspondences):
         Fs = np.array(
             [l * F1 + (1 - l) * F2 for l in zeros]
         )
-        return np.linalg.inv(T_prime) @ Fs @ T
+        return T_prime.T @ Fs @ T
 
     elif nc == 8:
         F = Vh[-1].reshape(1,3,3)
@@ -135,3 +171,9 @@ def homogenize(points):
 def unhomogenize(points):
     points /= points[..., -1:]
     return points[..., :-1]
+
+def save_display(question, name, img):
+    cv2.imshow('img', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.imwrite(f"output/{question}/{name}.jpg", img)
