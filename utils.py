@@ -16,8 +16,8 @@ class Q1:
     K2: np.ndarray
     gt: np.lib.npyio.NpzFile
 _root = "data"
-def load_q1():
-    q1a = "q1a/bench"
+def load_q1(dataset="bench"):
+    q1a = f"q1a/{dataset}"
 
     pts1, pts2 = np.load(os.path.join(_root, q1a, "corresp.npz")).values()
     pts1_noisy, pts2_noisy = np.load(os.path.join(_root, q1a, "corresp_noisy.npz"))
@@ -44,6 +44,7 @@ def draw_epipolar(points, F, img2):
     F = F.squeeze()
     height,width = img2.shape[:-1]
     lines = points @ F.T # np.einsum('bi,ji->bj')
+    rng = np.random.default_rng(0)
     for line in lines:
         a,b,c = line
         if abs(b) > abs(a):
@@ -52,7 +53,7 @@ def draw_epipolar(points, F, img2):
         else:
             pt1 = (int(-c/a), 0)
             pt2 = (int((-c - b * height)/a), height)
-        color = tuple(np.random.default_rng().integers(0, 255, 3).tolist())
+        color = tuple(rng.integers(0, 255, 3).tolist())
         img2 = cv2.line(img2, pt1, pt2, color=color, thickness=4)
     return img2
 
@@ -103,6 +104,9 @@ def create_F(correspondences):
         return F
     else:
         raise ValueError(f"Not the right number of correspondences. You passed {nc} correspondences but there only should be 7 or 8")
+
+def create_E(F, K1, K2):
+    return K2.T @ F @ K1
 
 def get_T(coords, target_scale):
     assert coords.shape[-1] > 2
