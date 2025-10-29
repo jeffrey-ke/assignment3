@@ -54,7 +54,7 @@ def load_q1(dataset="bench"):
         base = f"q1b/{dataset}"
 
     pts1, pts2 = np.load(os.path.join(_root, base, "corresp.npz")).values()
-    pts1_noisy, pts2_noisy = np.load(os.path.join(_root, base, "corresp_noisy.npz"))
+    pts1_noisy, pts2_noisy = np.load(os.path.join(_root, base, "corresp_noisy.npz")).values()
 
     corresp = homogenize(
         np.stack((pts1, pts2), axis=0)

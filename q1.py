@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 
 import utils
+from q2 import error_all
 
 def q1a(scene="bench"):
     os.makedirs("output/q1", exist_ok=True)
@@ -46,4 +47,8 @@ if __name__ == "__main__":
     # q1a("bench")
     # q1a("remote")
     # q1b("hydrant")
-    q1b("ball")
+    # q1b("ball")
+    q1 = utils.load_q1("bench")
+    F = utils.create_F(q1.corresp)
+    error = error_all(F, q1.corresp)
+    pdb.set_trace()
