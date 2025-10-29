@@ -11,7 +11,7 @@ import utils
 
 def algebraic_triangulate(correspondences, cameras):
     P, P_prime = cameras
-    def create_row(correspondence):
+    def solve_A(correspondence):
         x, x_prime = correspondence
         a, b, c = x
         a_prime, b_prime, c_prime = x_prime
@@ -30,6 +30,7 @@ def algebraic_triangulate(correspondences, cameras):
         [create_row(correspondence) for correspondence in correspondences.transpose(1, 0, 2)],
         axis=0
     )
+    pdb.set_trace()
     *_, Vh = np.linalg.svd(A)
 
     return utils.unhomogenize(Vh[-1].reshape(-1, 4), keepdims=True)
@@ -74,8 +75,9 @@ def load_q3():
     img1 = cv2.imread(os.path.join(root, "img1.jpg"))
     img2 = cv2.imread(os.path.join(root, "img2.jpg"))
     assert img1 is not None and img2 is not None
-    pts1 = np.load(os.path.join(root, "pts1.npy")).astype(np.float32)
-    pts2 = np.load(os.path.join(root, "pts2.npy")).astype(np.float32)
+    rng = np.random.default_rng(0)
+    pts1 = rng.choice(np.load(os.path.join(root, "pts1.npy")).astype(np.float32), 1000)
+    pts2 = rng.choice(np.load(os.path.join(root, "pts2.npy")).astype(np.float32), 1000)
     P = np.load(os.path.join(root, "P1.npy"))
     P_prime = np.load(os.path.join(root, "P2.npy"))
     corresps = utils.homogenize(np.stack((pts1, pts2), axis=0))
