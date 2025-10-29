@@ -5,6 +5,41 @@ import os
 
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
+
+class xy_plotter:
+
+    def __init__(self, output_path, name):
+        self.output_path = output_path
+        self.name = name
+        self.fig, self.ax = plt.subplots()
+        self.xs1 = []
+        self.ys1 = []
+        self.xs2 = []
+        self.ys2 = []
+        self.output_path = output_path
+        self.name = name
+
+    def append_xy1(self, x, y):
+        self.xs1.append(x)
+        self.ys1.append(y)
+
+    def append_xy2(self, x, y):
+        self.xs2.append(x)
+        self.ys2.append(y)
+
+    def plot(self):
+        seven_pt, = self.ax.plot(self.xs1, self.ys1, label="7 point")
+        eight_pt,= self.ax.plot(self.xs2, self.ys2, label="8 point")
+        self.ax.legend(handles=[seven_pt, eight_pt])
+
+    def savefig(self):
+        self.fig.savefig(os.path.join(self.output_path, f"{self.name}.png"))
+
+    def __del__(self):
+        plt.close(self.fig)
+
+
 
 @dataclass
 class Q1:
@@ -146,7 +181,8 @@ def create_E(F, K1, K2):
 
 def get_T(coords, target_scale):
     assert coords.shape[-1] > 2
-    coords /= coords[:, -1:]
+    coords = coords.copy()
+    coords = coords / coords[:, -1:]
     mu = np.mean(coords[:, :-1], axis=0)
     cur_scale = np.mean(
             np.linalg.norm(coords[:, :-1] - mu, axis=-1),
@@ -168,9 +204,10 @@ def homogenize(points):
         axis=-1
     )
 
-def unhomogenize(points):
-    points /= points[..., -1:]
-    return points[..., :-1]
+def unhomogenize(points, keepdims=False):
+    points = points.copy()
+    points = points / points[..., -1:]
+    return points if keepdims else points[..., :-1]
 
 def save_display(question, name, img):
     cv2.imshow('img', img)

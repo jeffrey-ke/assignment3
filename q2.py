@@ -3,6 +3,7 @@ import pdb
 from math import log
 
 import numpy as np
+from numba import njit, jit
 import cv2
 from scipy.optimize import least_squares
 
@@ -43,7 +44,7 @@ def lm_F(F_init, best_inlier_set):
     assert result.success
     return result.x.reshape(3,3)
 
-def ransac_F(noisy_corresps, nc, max_err=0.05, inlier_ratio=0.55, thresh=1.25):
+def ransac_F(noisy_corresps, nc, plotter, max_err=0.05, inlier_ratio=0.55, thresh=1.25):
     best_F = None
     best_inlier_set = np.empty((0, 2, 3))
     best_error = float('inf')
@@ -52,7 +53,7 @@ def ransac_F(noisy_corresps, nc, max_err=0.05, inlier_ratio=0.55, thresh=1.25):
     corresps = noisy_corresps.transpose(1, 0, 2) # M pairs
 
     rng = np.random.default_rng(0)
-    for _ in tqdm(range(iters)):
+    for i in tqdm(range(iters)):
         samples = rng.choice(corresps, nc, replace=False)
         assert samples.shape == (nc, 2, 3) # nc pairs
         F = utils.create_F(samples.transpose(1, 0, 2))
@@ -70,13 +71,33 @@ def ransac_F(noisy_corresps, nc, max_err=0.05, inlier_ratio=0.55, thresh=1.25):
             best_F = F[best_F_idx]
             best_error = errors[best_F_idx].mean()
 
+            if nc == 7:
+                plotter.append_xy1(i, len(best_inlier_set) / len(corresps))
+            elif nc == 8:
+                plotter.append_xy2(i, len(best_inlier_set) / len(corresps))
+
     final_F = lm_F(best_F, best_inlier_set.transpose(1, 0, 2))
     return final_F
 
+def q2(scene):
+    plotter = utils.xy_plotter("output/q2", f"{scene}_iter_inlier_plot.png")
+
+    data = utils.load_q1(scene)
+    lm_f_8 = ransac_F(data.corresp_noisy, 8, plotter)
+    img_8 = utils.draw_epipolar(data, lm_f_8[None, ...])
+    cv2.imwrite(f"output/q2/noisy_{scene}_8pts.jpg", img_8)
+
+    lm_f_7 = ransac_F(data.corresp_noisy, 7, plotter)
+    img_7 = utils.draw_epipolar(data, lm_f_7[None, ...])
+    cv2.imwrite(f"output/q2/noisy_{scene}_7pts.jpg", img_7)
+
+    plotter.plot()
+    plotter.savefig()
+
 if __name__ == "__main__":
-    q1a = utils.load_q1("bench")
-    lm_f = ransac_F(q1a.corresp_noisy, 8)
-    img = utils.draw_epipolar(q1a, lm_f[None, ...])
-    cv2.imshow('img', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    os.makedirs("output/q2", exist_ok=True)
+    q2("bench")
+    q2("remote")
+    q2("ball")
+    q2("hydrant")
+
